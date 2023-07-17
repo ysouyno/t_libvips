@@ -18,7 +18,8 @@ int travel_pixels_generate(VipsRegion * or, void *vseq, void *a, void *b,
     unsigned char *q =
         (unsigned char *)VIPS_REGION_ADDR(or, r->left, r->top + y);
 
-    memcpy((unsigned char *)b + line_size * (r->top + y), p, line_size);
+    memcpy((unsigned char *)b + line_size * (r->top + y) + r->left, p,
+           line_size);
   }
 
   return 0;
