@@ -44,3 +44,20 @@ if (!data) {
 ```
 
 试了下，`vips_image_write_to_memory`的效率不慢呀，感觉比`generate`快多了，怎么回事儿？
+
+### 测试`travel_pixels`和`vips_image_write_to_memory`的效率
+
+1. 以防`printf()`带来效率损失，去掉了`travel_pixels`循环中的`printf()`和`out`图片的输出。
+2. 当`travel_pixels`运行结束后，`in`需要重新读图，否则`vips_image_write_to_memory`失败。
+
+输出如下：
+
+``` shellsession
+> main.exe bg1a.jpg 1.jpg 2.jpg
+time(travel_pixels): 26ms
+time(vips_image_write_to_memory): 21ms
+
+> main.exe bg1a.jpg 1.jpg 2.jpg
+time(travel_pixels): 27ms
+time(vips_image_write_to_memory): 21ms
+```

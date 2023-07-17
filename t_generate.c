@@ -18,13 +18,7 @@ int travel_pixels_generate(VipsRegion * or, void *vseq, void *a, void *b,
     unsigned char *q =
         (unsigned char *)VIPS_REGION_ADDR(or, r->left, r->top + y);
 
-    for (x = 0; x < line_size; ++x) {
-      q[x] = 255 - p[x];
-      ((unsigned char *)b)[line_size * (r->top + y) + r->left + x] = p[x];
-      // memcpy((unsigned char *)b + line_size * (r->top + y), p, line_size);
-    }
-
-    printf("pixels pos: %d, %d, b: %p\n", r->left, r->top + y, b);
+    memcpy((unsigned char *)b + line_size * (r->top + y), p, line_size);
   }
 
   return 0;
@@ -77,6 +71,9 @@ int t_generate(int argc, char **argv) {
   int format = in->BandFmt;
   unsigned char *data = (unsigned char *)malloc(size);
 
+  int beg, end;
+
+  beg = clock();
   if (travel_pixels(in, &out, data))
     vips_error_exit("unable to travel_pixels");
 
@@ -86,9 +83,27 @@ int t_generate(int argc, char **argv) {
 
   if (vips_image_write_to_file(out, argv[2], NULL))
     vips_error_exit("unable to write");
+  end = clock();
+  printf("time(travel_pixels): %dms\n", end - beg);
 
   if (vips_image_write_to_file(out2, argv[3], NULL))
     vips_error_exit("unable to write");
+
+  g_object_unref(in);
+
+  // Need to read it from file again or error when call
+  // `vips_image_write_to_memory`
+  if (!(in = vips_image_new_from_file(argv[1], "access", VIPS_ACCESS_SEQUENTIAL,
+                                      NULL)))
+    vips_error_exit("unable to open");
+
+  beg = clock();
+  const void *p = vips_image_write_to_memory(in, NULL);
+  if (!p) {
+    vips_error_exit("unable to write to memory");
+  }
+  end = clock();
+  printf("time(vips_image_write_to_memory): %dms\n", end - beg);
 
   g_object_unref(in);
   g_object_unref(out);
