@@ -1,8 +1,21 @@
 # Test libvips on Windows
 
+<!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
+**Table of Contents**
+
+- [Test libvips on Windows](#test-libvips-on-windows)
+    - [先决条件](#先决条件)
+    - [编译运行](#编译运行)
+    - [测试](#测试)
+        - [如何通过`generate`方式获取图片整个像素数组并保存为文件](#如何通过generate方式获取图片整个像素数组并保存为文件)
+        - [测试`travel_pixels`和`vips_image_write_to_memory`的效率](#测试travel_pixels和vips_image_write_to_memory的效率)
+        - [为什么`vips_image_write_to_memory`会比`travel_pixels`效率高](#为什么vips_image_write_to_memory会比travel_pixels效率高)
+
+<!-- markdown-toc end -->
+
 ## 先决条件
 
-安装：“[qt-opensource-windows-x86-mingw492-5.6.3.exe](https://download.qt.io/new_archive/qt/5.6/5.6.3/qt-opensource-windows-x86-mingw492-5.6.3.exe)”。
+使用`mingw`，我这里选择的是`QT`：“[qt-opensource-windows-x86-mingw492-5.6.3.exe](https://download.qt.io/new_archive/qt/5.6/5.6.3/qt-opensource-windows-x86-mingw492-5.6.3.exe)”。
 
 ## 编译运行
 
@@ -61,3 +74,34 @@ time(vips_image_write_to_memory): 21ms
 time(travel_pixels): 27ms
 time(vips_image_write_to_memory): 21ms
 ```
+
+### 为什么`vips_image_write_to_memory`会比`travel_pixels`效率高
+
+我分析了`vips_image_write_to_memory`的源码发现`vips_image_write_to_memory`内部也是使用的`generate`来实现的，但是它更快是因为它的`generate_fn`函数：
+
+``` c++
+static int
+vips_image_write_gen( VipsRegion *or,
+	void *seq, void *a, void *b, gboolean *stop )
+{
+	VipsRegion *ir = (VipsRegion *) seq;
+	VipsRect *r = &or->valid;
+
+	/*
+	printf( "vips_image_write_gen: %p "
+		"left = %d, top = %d, width = %d, height = %d\n",
+		or->im,
+		r->left, r->top, r->width, r->height );
+	 */
+
+	/* Copy with pointers.
+	 */
+	if( vips_region_prepare( ir, r ) ||
+		vips_region_region( or, ir, r, r->left, r->top ) )
+		return( -1 );
+
+	return( 0 );
+}
+```
+
+这里使用了`vips_region_region`来实现，相比我的`travel_pixels`这里少了一个大循环。

@@ -26,8 +26,8 @@ int travel_pixels_generate(VipsRegion * or, void *vseq, void *a, void *b,
 }
 
 int travel_pixels(VipsImage *in, VipsImage **out, unsigned char *addr) {
-  if (vips_check_uncoded("negative", in) ||
-      vips_check_format("negative", in, VIPS_FORMAT_UCHAR))
+  if (vips_check_uncoded("travel_pixels", in) ||
+      vips_check_format("travel_pixels", in, VIPS_FORMAT_UCHAR))
     return -1;
 
   *out = vips_image_new();
