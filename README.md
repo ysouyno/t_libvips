@@ -42,3 +42,5 @@ if (!data) {
   return NULL;
 }
 ```
+
+试了下，`vips_image_write_to_memory`的效率不慢呀，感觉比`generate`快多了，怎么回事儿？
